@@ -55,7 +55,7 @@ apply(plugin = "java")
 
 allprojects {
     group = "org.opencrx"
-    version = "6.0.1"
+    version = "6.0.2"
     var env = Properties()
     env.load(FileInputStream(File(project.getRootDir(), "build.properties")))
     val targetPlatform = JavaVersion.valueOf(env.getProperty("target.platform"))    
