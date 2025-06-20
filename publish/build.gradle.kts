@@ -72,21 +72,8 @@ eclipse {
 publishing {
     repositories {
         maven {
-        	// Local
-            /**/
             val releasesRepoUrl = uri(project.layout.buildDirectory.dir("repos/releases"))
             val snapshotsRepoUrl = uri(project.layout.buildDirectory.dir("repos/snapshots"))
-            /**/
-            // OSSRH
-            /*
-            credentials {
-                username = project.property("ossrhUsername").toString()
-                password = project.property("ossrhPassword").toString()
-            }
-            val releasesRepoUrl = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2")
-            val snapshotsRepoUrl = uri("https://oss.sonatype.org/content/repositories/snapshots")
-            */
-            // Url
             url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
         }
     }
@@ -255,11 +242,9 @@ publishing {
 }
 
 signing {
-    /*
     sign(publishing.publications["opencrxBuildSrc"])
     sign(publishing.publications["opencrxCore"])
     sign(publishing.publications["opencrxCoreModels"])
     sign(publishing.publications["opencrxCoreConfig"])
     sign(publishing.publications["opencrxClient"])
-    */
 }
