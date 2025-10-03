@@ -136,27 +136,41 @@ import org.openmdx.kernel.log.SysLog;
 import org.w3c.spi2.Datatypes;
 import org.w3c.spi2.Structures;
 
+/**
+ * Products.
+ * 
+ */
 public class Products extends AbstractImpl {
 
-    //-------------------------------------------------------------------------
+	/**
+	 * Register backend class.
+	 * 
+	 */
 	public static void register(
 	) {
 		registerImpl(new Products());
 	}
 	
-    //-------------------------------------------------------------------------
+	/**
+	 * Get instance of this backend class.
+	 * 
+	 * @return
+	 * @throws ServiceException
+	 */
 	public static Products getInstance(
 	) throws ServiceException {
 		return getInstance(Products.class);
 	}
 
-	//-------------------------------------------------------------------------
 	protected Products(
 	) {
 		
 	}
 	
-    //-------------------------------------------------------------------------
+    /**
+     * PriceLevelMarshaller
+     * 
+     */
     public class PriceLevelMarshaller
         implements Marshaller {
 
@@ -219,7 +233,10 @@ public class Products extends AbstractImpl {
         
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * ProductPhasePriceLevelMarshaller
+     * 
+     */
     public class ProductPhasePriceLevelMarshaller
         implements Marshaller {
 
@@ -388,7 +405,12 @@ public class Products extends AbstractImpl {
 	}
 
     /**
-     * @return Returns the product segment.
+     * Returns the product segment.
+     * 
+     * @param pm
+     * @param providerName
+     * @param segmentName
+     * @return
      */
     public org.opencrx.kernel.product1.jmi1.Segment getProductSegment(
         PersistenceManager pm,
@@ -400,7 +422,17 @@ public class Products extends AbstractImpl {
         );
     }
 
-    //-----------------------------------------------------------------------
+    /**
+     * Init the pricing rule.
+     * 
+     * @param pricingRuleName
+     * @param description
+     * @param getPriceLevelScript
+     * @param pm
+     * @param providerName
+     * @param segmentName
+     * @return
+     */
     public PricingRule initPricingRule(
         String pricingRuleName,
         String description,
@@ -453,7 +485,7 @@ public class Products extends AbstractImpl {
     	for(ProductConfiguration configuration: configurations) {
             if(            	
                 !cloneDefaultOnly ||                    
-                ((configuration.isDefault() != null) && configuration.isDefault().booleanValue())
+                Boolean.TRUE.equals(configuration.isDefault())
             ) {
             	Cloneable.getInstance().cloneObject(
             		configuration, 
@@ -476,7 +508,7 @@ public class Products extends AbstractImpl {
 	        	configurations = ((ConfiguredProduct)to).getConfiguration();
 	            ProductConfiguration defaultConfiguration = null;   
 	            for(ProductConfiguration configuration: configurations) {
-	                if((configuration.isDefault() != null) && configuration.isDefault().booleanValue()) {
+	                if(Boolean.TRUE.equals(configuration.isDefault())) {
 	                    defaultConfiguration = configuration;
 	                    break;
 	                }
@@ -854,7 +886,14 @@ public class Products extends AbstractImpl {
         return query;
     }
     
-    //-------------------------------------------------------------------------    
+    /**
+     * Get price list entries according to applyPriceFilter flag.
+     * 
+     * @param priceLevel
+     * @param applyPriceFilter
+     * @return
+     * @throws ServiceException
+     */
     public List<PriceListEntry> getPriceListEntries(
     	AbstractPriceLevel priceLevel,
         boolean applyPriceFilter
@@ -877,7 +916,16 @@ public class Products extends AbstractImpl {
         return productSegment.getPriceListEntry(priceListEntryQuery);
     }
     
-    //-------------------------------------------------------------------------    
+    /**
+     * Find prices matching the given uom.
+     * 
+     * @param product
+     * @param priceLevel
+     * @param uom
+     * @param useBasedOnPriceLevel
+     * @return
+     * @throws ServiceException
+     */
     public List<ProductBasePrice> findPrices(
         Product product,
         AbstractPriceLevel priceLevel,
@@ -911,7 +959,15 @@ public class Products extends AbstractImpl {
         return product.getBasePrice(priceQuery);
     }
 
-    //-------------------------------------------------------------------------
+    /**
+     * Clone price level using the price level marshallers.
+     * 
+     * @param priceLevel
+     * @param processingMode
+     * @param priceLevelMarshallers
+     * @return
+     * @throws ServiceException
+     */
     public int clonePriceLevel(
         AbstractPriceLevel priceLevel,
         Short processingMode,
@@ -984,18 +1040,20 @@ public class Products extends AbstractImpl {
                 for(PriceListEntry priceListEntry: priceListEntries) {
                 	org.opencrx.kernel.product1.jmi1.ProductBasePrice price = priceListEntry.getBasePrice();
                 	// Do not clone disabled prices
-                	if((price.isDisabled() == null) || !price.isDisabled().booleanValue()) {
+                	if(!Boolean.TRUE.equals(price.isDisabled())) {
 	                	org.opencrx.kernel.product1.jmi1.Product product = 
 	                		(org.opencrx.kernel.product1.jmi1.Product)pm.getObjectById(
 	                			price.refGetPath().getParent().getParent()
 	                		);
 	                	// Do not clone prices for disabled products 
-	                	if((product.isDisabled() == null) || !product.isDisabled().booleanValue()) {
+	                	if(!Boolean.TRUE.equals(product.isDisabled())) {
 		                	org.opencrx.kernel.product1.jmi1.ProductBasePrice clonedPrice = PersistenceHelper.clone(price);
 		                	clonedPrice.getPriceLevel().clear();
-		                	clonedPrice.getPriceLevel().add(
-		                		clonedPriceLevel
-		                	);
+		                	clonedPrice.getPriceLevel().add(clonedPriceLevel);
+		                	// Ensure consistency with the cloned level’s filters
+		                	clonedPrice.setPriceCurrency(clonedPriceLevel.getPriceCurrency());
+		                	clonedPrice.getUsage().clear();
+		                	clonedPrice.getUsage().addAll(clonedPriceLevel.getPriceUsage());
 		                	product.addBasePrice(
 		                		false,
 		                		this.getUidAsString(),
@@ -1009,7 +1067,18 @@ public class Products extends AbstractImpl {
         return dependentPriceLevels.size() + 1;        
     }
 
-    //-------------------------------------------------------------------------
+    /**
+     * Clone price level.
+     * 
+     * @param priceLevel
+     * @param processingMode
+     * @param nameReplacementRegex
+     * @param nameReplacementValue
+     * @param validFrom
+     * @param validTo
+     * @return
+     * @throws ServiceException
+     */
     public int clonePriceLevel(
         org.opencrx.kernel.product1.jmi1.PriceLevel priceLevel,
         Short processingMode,
@@ -1035,7 +1104,17 @@ public class Products extends AbstractImpl {
         );
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Clone product phase price level.
+     * 
+     * @param priceLevel
+     * @param processingMode
+     * @param nameReplacementRegex
+     * @param nameReplacementValue
+     * @param productPhaseKey
+     * @return
+     * @throws ServiceException
+     */
     public int cloneProductPhasePriceLevel(
         org.opencrx.kernel.product1.jmi1.ProductPhasePriceLevel priceLevel,
         Short processingMode,
@@ -1059,7 +1138,14 @@ public class Products extends AbstractImpl {
         );
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Get dependent price levels.
+     * 
+     * @param priceLevel
+     * @param recursive
+     * @return
+     * @throws ServiceException
+     */
     public List<AbstractPriceLevel> getDependentPriceLevels(
         AbstractPriceLevel priceLevel,
         boolean recursive
@@ -1087,7 +1173,15 @@ public class Products extends AbstractImpl {
         return new ArrayList<AbstractPriceLevel> (dependentPriceLevels);
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Calculate all prices for this price level according to processing mode.
+     * 
+     * @param priceLevel
+     * @param processingMode
+     * @param includeProductsModifiedSince
+     * @return
+     * @throws ServiceException
+     */
     public int calculatePrices(
         org.opencrx.kernel.product1.jmi1.AbstractPriceLevel priceLevel,
         Short processingMode,
@@ -1152,13 +1246,9 @@ public class Products extends AbstractImpl {
         ) {
             if(priceModifier instanceof DiscountPriceModifier) {
             	DiscountPriceModifier discountPriceModifier = (DiscountPriceModifier)priceModifier;
-                boolean discountIsPercentageModifier = 
-                	(discountPriceModifier.isDiscountIsPercentage() != null) && 
-                	discountPriceModifier.isDiscountIsPercentage().booleanValue();
-                boolean discountIsPercentagePrice =
-                    (modifiedPrice.isDiscountIsPercentage() != null) && 
-                    modifiedPrice.isDiscountIsPercentage().booleanValue();
-                if(discountIsPercentageModifier == discountIsPercentagePrice) {
+                boolean modifierDiscountIsPercentage = Boolean.TRUE.equals(discountPriceModifier.isDiscountIsPercentage());
+                boolean priceDiscountIsPercentage = Boolean.TRUE.equals(modifiedPrice.isDiscountIsPercentage());
+                if(modifierDiscountIsPercentage == priceDiscountIsPercentage) {
                     modifiedPrice.setDiscount(
                         discountPriceModifier.getDiscount()
                     );
@@ -1340,7 +1430,13 @@ public class Products extends AbstractImpl {
         return numberProcessed;
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Remove prices for the price level.
+     * 
+     * @param priceLevel
+     * @return
+     * @throws ServiceException
+     */
     public int removePrices(
         AbstractPriceLevel priceLevel
     ) throws ServiceException {
@@ -1370,7 +1466,14 @@ public class Products extends AbstractImpl {
         return numberProcessed;
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Remove prices for the price level according to processing mode.
+     * 
+     * @param priceLevel
+     * @param processingMode
+     * @return
+     * @throws ServiceException
+     */
     public int removePrices(
         org.opencrx.kernel.product1.jmi1.AbstractPriceLevel priceLevel,
         Short processingMode        
@@ -1627,7 +1730,8 @@ public class Products extends AbstractImpl {
      * @return
      * @throws ServiceException
      */
-    public GetPriceLevelResult getPriceLevel(
+    @SuppressWarnings("deprecation")
+	public GetPriceLevelResult getPriceLevel(
         PricingRule pricingRule,
         SalesContract contract,
         SalesContractPosition position,
@@ -1707,7 +1811,13 @@ public class Products extends AbstractImpl {
         }
     }
 
-    //-------------------------------------------------------------------------
+    /**
+     * Return true if price level has dependent price levels.
+     * 
+     * @param priceLevel
+     * @return
+     * @throws ServiceException
+     */
     public boolean hasDependentPriceLevels(
         AbstractPriceLevel priceLevel
     ) throws ServiceException {
@@ -1729,7 +1839,14 @@ public class Products extends AbstractImpl {
     	return false;
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Remove price level. The price level must not have dependent price levels
+     * and the price list must be empty.
+     * 
+     * @param priceLevel
+     * @param preDelete
+     * @throws ServiceException
+     */
     public void removePriceLevel(
         AbstractPriceLevel priceLevel,
         boolean preDelete
@@ -1764,7 +1881,13 @@ public class Products extends AbstractImpl {
         }
     }
     
-    //-------------------------------------------------------------------------
+    /**
+     * Count the filtered products.
+     * 
+     * @param productFilter
+     * @return
+     * @throws ServiceException
+     */
     public int countFilteredProduct(
         org.opencrx.kernel.product1.jmi1.AbstractFilterProduct productFilter
     ) throws ServiceException {
