@@ -1,4 +1,4 @@
 /distribution
 .gradle/
 build/
-/server/
+/server/apache-tomee-plus-10.1.2/

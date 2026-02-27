@@ -1,0 +1,6 @@
+/*C11*/SET SCHEMA PUBLIC
+DELETE FROM OOMSE2_PRINCIPAL WHERE OBJECT_ID='principal/CRX/Root/Root/admin-Root'
+INSERT INTO OOMSE2_PRINCIPAL VALUES('principal/CRX/Root/Root/admin-Root',0,'2008-06-24 16:40:44.343000',1,NULL,'Root\\admin-Root',FALSE,2,1,'admin-Root','realm/CRX/Root/Root','subject/CRX/Root/admin-Root','2026-02-27 17:00:54.179000','org:opencrx:security:realm1:Principal','2026-02-27 17:00:54.179000',0,NULL,0,NULL)
+DELETE FROM OOMSE2_PRINCIPAL_ WHERE OBJECT_ID='principal/CRX/Root/Root/admin-Root' AND IDX=0
+INSERT INTO OOMSE2_PRINCIPAL_ VALUES('principal/CRX/Root/Root/admin-Root',0,NULL,'admin-Root','principal/CRX/Root/Root/admin-Root.User','admin-Root','org:opencrx:security:realm1:Principal',NULL,NULL)
+COMMIT
