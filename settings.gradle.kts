@@ -46,12 +46,6 @@
 buildscript {
     repositories {
         mavenCentral()
-        maven {
-            url = uri("https://www.opencrx.org/repos/releases")
-        }
-        maven {
-            url = uri("https://www.openmdx.org/repos/releases")
-        }
     }
 }
 rootProject.name = "opencrx"

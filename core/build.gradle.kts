@@ -61,12 +61,6 @@ apply(plugin = "opencrx")
 
 repositories {
 	mavenCentral()
-    maven {
-        url = uri("https://www.openmdx.org/repos/releases")
-    }
-    maven {
-        url = uri("https://www.openmdx.org/repos/releases")
-    }    
 }
 
 var env = Properties()
@@ -147,9 +141,8 @@ sourceSets.create("sample") {
     resources.srcDir("src/sample/resources")
 }
 
-tasks.test {
-    useJUnitPlatform()
-    maxHeapSize = "4G"
+tasks.withType<JavaCompile>().matching { it.name == "compileTestJava" }.configureEach {
+    dependsOn("opencrx-core.jar", "opencrx-core-config.jar", "opencrx-client.jar", "opencrx-config.jar", "opencrx-bpi.war", "opencrx.ear")
 }
 
 tasks {
